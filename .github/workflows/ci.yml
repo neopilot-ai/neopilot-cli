@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  pull_request: { branches: [main] }
+  push: { branches: [main] }
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Run tasks first because they are higher signal.
+
+      - name: Install dependencies (neopilot-cli)
+        run: pnpm install
+
+      - name: Check formatting (neopilot-cli)
+        run: pnpm run format
+
+      - name: Run tests (neopilot-cli)
+        run: pnpm run test
+
+      - name: Lint (neopilot-cli)
+        run: |
+          pnpm run lint -- \
+            --rule "no-console:error" \
+            --rule "no-debugger:error" \
+            --max-warnings=-1
+
+      - name: Type‑check (neopilot-cli)
+        run: pnpm run typecheck
+
+      - name: Build (neopilot-cli)
+        run: pnpm run build
+
+      # Run formatting checks in the root directory last.
+
+      - name: Install dependencies (root)
+        run: pnpm ci
+
+      - name: Check formatting (root)
+        run: pnpm run format
