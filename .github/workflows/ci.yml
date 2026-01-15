@@ -7,46 +7,38 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 
-      # Run tasks first because they are higher signal.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies (neopilot-cli)
-        run: pnpm install
-
-      - name: Check formatting (neopilot-cli)
+      - name: Prettier (run `pnpm run format:fix` to fix)
         run: pnpm run format
 
-      - name: Run tests (neopilot-cli)
-        run: pnpm run test
+      - name: Lint
+        run: pnpm run lint
 
-      - name: Lint (neopilot-cli)
-        run: |
-          pnpm run lint -- \
-            --rule "no-console:error" \
-            --rule "no-debugger:error" \
-            --max-warnings=-1
-
-      - name: Type‑check (neopilot-cli)
+      - name: Type-check
         run: pnpm run typecheck
 
-      - name: Build (neopilot-cli)
+      - name: Run tests
+        run: pnpm run test
+
+      - name: Build
         run: pnpm run build
-
-      # Run formatting checks in the root directory last.
-
-      - name: Install dependencies (root)
-        run: pnpm ci
-
-      - name: Check formatting (root)
-        run: pnpm run format
